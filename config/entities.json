@@ -1,0 +1,9 @@
+{
+  "lights": {
+    "salotto": "light.living_room",
+    "cucina": "light.kitchen"
+  },
+  "climate": {
+    "salotto": "climate.living_room"
+  }
+}

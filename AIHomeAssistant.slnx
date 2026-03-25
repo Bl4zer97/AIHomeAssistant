@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AIHomeAssistant.Api/AIHomeAssistant.Api.csproj" />
+    <Project Path="src/AIHomeAssistant.Core/AIHomeAssistant.Core.csproj" />
+    <Project Path="src/AIHomeAssistant.Infrastructure/AIHomeAssistant.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AIHomeAssistant.Tests/AIHomeAssistant.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,13 @@
+_bmad-output/
+_bmad/
+.github/
+docs/
+audio/
+config/
+data/
+logs/
+**/bin/
+**/obj/
+.env
+*.db
+*.md

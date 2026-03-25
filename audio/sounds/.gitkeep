@@ -1,0 +1,2 @@
+# Place success.wav and error.wav here at deploy time.
+# These binary WAV files are excluded from source control via .gitignore.
