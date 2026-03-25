@@ -1,0 +1,44 @@
+## Build outputs
+**/bin/
+**/obj/
+
+## Local .NET user secrets
+**/.user.secrets.json
+**/secrets.json
+
+## SQLite database files
+*.db
+*.db-shm
+*.db-wal
+data/
+
+## Logs
+logs/
+
+## Environment / secrets (NEVER commit)
+.env
+*.env.*
+
+## Audio WAV files (binary assets, provided at deploy time)
+audio/sounds/*.wav
+
+## dotnet user-secrets
+**/UserSecrets/
+
+## VS/Rider IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.DotSettings.user
+
+## JetBrains Rider
+.idea/
+*.rider.json
+
+## macOS
+.DS_Store
+/_bmad-output
+/_bmad
+/.claude/skills
+/.github/skills
