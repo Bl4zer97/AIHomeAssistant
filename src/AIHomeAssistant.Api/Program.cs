@@ -7,7 +7,7 @@ using Serilog.Formatting.Json;
 
 // Bootstrap logger captures startup errors before DI is configured
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console(new JsonFormatter())
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateBootstrapLogger();
 
 try
@@ -18,11 +18,12 @@ try
         .ReadFrom.Configuration(ctx.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
-        .WriteTo.Console(new JsonFormatter())
+        .WriteTo.Console(outputTemplate:
+            "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext:l} » {Message:lj}{NewLine}{Exception}")
         .WriteTo.File(
+            formatter: new JsonFormatter(),
             path: "logs/aihomeassistant-.log",
-            rollingInterval: RollingInterval.Day,
-            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+            rollingInterval: RollingInterval.Day));
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();

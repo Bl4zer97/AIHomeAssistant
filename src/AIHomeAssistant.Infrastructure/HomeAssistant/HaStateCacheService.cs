@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using AIHomeAssistant.Core.Interfaces;
 using AIHomeAssistant.Core.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -8,19 +9,20 @@ namespace AIHomeAssistant.Infrastructure.HomeAssistant;
 
 public class HaStateCacheService : IHaStateCacheService, IHostedService
 {
-    private readonly IHomeAssistantClient _haClient;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<HaStateCacheService> _logger;
     private readonly ConcurrentDictionary<string, HaState> _cache = new(StringComparer.OrdinalIgnoreCase);
-    private DateTimeOffset _lastSuccessfulPollAt = DateTimeOffset.MinValue;
+    private DateTimeOffset? _lastSuccessfulPollAt;
+    private bool _loggedNotConfigured;
     private CancellationTokenSource? _cts;
     private Task? _pollTask;
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan StaleThreshold = TimeSpan.FromSeconds(60);
 
-    public HaStateCacheService(IHomeAssistantClient haClient, ILogger<HaStateCacheService> logger)
+    public HaStateCacheService(IServiceScopeFactory scopeFactory, ILogger<HaStateCacheService> logger)
     {
-        _haClient = haClient;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -87,7 +89,9 @@ public class HaStateCacheService : IHaStateCacheService, IHostedService
 
     private async Task PollOnceAsync(CancellationToken ct)
     {
-        var result = await _haClient.GetAllStatesAsync(ct);
+        using var scope = _scopeFactory.CreateScope();
+        var haClient = scope.ServiceProvider.GetRequiredService<IHomeAssistantClient>();
+        var result = await haClient.GetAllStatesAsync(ct);
 
         if (result.Success && result.Value is not null)
         {
@@ -101,19 +105,38 @@ public class HaStateCacheService : IHaStateCacheService, IHostedService
         }
         else
         {
-            var staleDuration = DateTimeOffset.UtcNow - _lastSuccessfulPollAt;
-
-            if (staleDuration > StaleThreshold)
+            if (_lastSuccessfulPollAt is null)
             {
-                _logger.LogError(
-                    "HA state cache is stale: last successful poll was {StaleDuration:g} ago. Error: {ErrorCode}",
-                    staleDuration, result.Error?.Code);
+                if (!_loggedNotConfigured)
+                {
+                    _loggedNotConfigured = true;
+                    _logger.LogWarning(
+                        "HA poll failed (never connected). Error: {ErrorCode} — {ErrorMessage}. Further failures will be logged at Debug.",
+                        result.Error?.Code, result.Error?.Message);
+                }
+                else
+                {
+                    _logger.LogDebug(
+                        "HA poll still failing (never connected). Error: {ErrorCode}",
+                        result.Error?.Code);
+                }
             }
             else
             {
-                _logger.LogWarning(
-                    "HA poll failed, retaining last-known cache. Error: {ErrorCode} — {ErrorMessage}",
-                    result.Error?.Code, result.Error?.Message);
+                var staleDuration = DateTimeOffset.UtcNow - _lastSuccessfulPollAt.Value;
+
+                if (staleDuration > StaleThreshold)
+                {
+                    _logger.LogError(
+                        "HA state cache is stale: last successful poll was {StaleDuration:g} ago. Error: {ErrorCode}",
+                        staleDuration, result.Error?.Code);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "HA poll failed, retaining last-known cache. Error: {ErrorCode} — {ErrorMessage}",
+                        result.Error?.Code, result.Error?.Message);
+                }
             }
         }
     }

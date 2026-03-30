@@ -1,6 +1,6 @@
 @AIHomeAssistant.Api_HostAddress = http://localhost:5272
 
-GET {{AIHomeAssistant.Api_HostAddress}}/weatherforecast/
+GET {{AIHomeAssistant.Api_HostAddress}}/
 Accept: application/json
 
 ###

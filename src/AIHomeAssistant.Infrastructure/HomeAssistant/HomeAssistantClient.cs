@@ -111,6 +111,13 @@ public class HomeAssistantClient : IHomeAssistantClient
 
     public async Task<PipelineResult<IReadOnlyList<HaState>>> GetAllStatesAsync(CancellationToken ct = default)
     {
+        if (_httpClient.BaseAddress is null)
+        {
+            _logger.LogWarning("HomeAssistant BaseUrl is not configured — skipping poll");
+            return new PipelineResult<IReadOnlyList<HaState>>(false, Error: new PipelineError(
+                "HA_NOT_CONFIGURED", "HomeAssistant:BaseUrl is not set"));
+        }
+
         try
         {
             var dtos = await _httpClient.GetFromJsonAsync<List<HaStateDto>>("api/states", ct);
@@ -139,7 +146,7 @@ public class HomeAssistantClient : IHomeAssistantClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error fetching all HA states: {Code}", "HA_UNAVAILABLE");
+            _logger.LogWarning(ex, "Unexpected error fetching all HA states: {Code}", "HA_UNAVAILABLE");
             return new PipelineResult<IReadOnlyList<HaState>>(false, Error: new PipelineError(
                 "HA_UNAVAILABLE", "Unexpected error fetching all states", ex));
         }

@@ -41,10 +41,11 @@ public static class DependencyInjection
         services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
 
         // ─── Home Assistant HTTP client ────────────────────────────────────────
-        services.AddHttpClient<HomeAssistantClient>(client =>
+        services.AddHttpClient<IHomeAssistantClient, HomeAssistantClient>((sp ,client) =>
         {
-            var baseUrl = configuration["HomeAssistant:BaseUrl"];
-            var token   = configuration["HomeAssistant:Token"];
+            var config = sp.GetRequiredService<IConfiguration>();
+            var baseUrl = config["HomeAssistant:BaseUrl"];
+            var token   = config["HomeAssistant:Token"];
 
             if (!string.IsNullOrWhiteSpace(baseUrl))
                 client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
@@ -55,8 +56,6 @@ public static class DependencyInjection
 
             client.Timeout = TimeSpan.FromSeconds(10);
         });
-
-        services.AddScoped<IHomeAssistantClient, HomeAssistantClient>();
 
         // HA state cache — singleton + hosted service (double-registration pattern)
         services.AddSingleton<HaStateCacheService>();
@@ -76,7 +75,7 @@ public static class DependencyInjection
         services.AddSingleton<IVisionService, AzureVisionService>();
 
         // ─── Audio ─────────────────────────────────────────────────────────────
-        services.AddSingleton<IWakeWordDetector, PorcupineWakeWordDetector>();
+        services.AddSingleton<IWakeWordDetector, VoskWakeWordDetector>();
         services.AddSingleton<IAudioFeedbackService, AudioFeedbackService>();
         services.AddSingleton<IAudioCaptureService, NAudioCaptureService>();
 
